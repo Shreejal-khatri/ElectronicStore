@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authmiddleware');
 const upload = require('../middleware/upload');
-const Product = require('../models/product');
+const Product = require('../models/Product');
 const validateProduct = require('../middleware/validateProduct'); 
 
 //CREATE product (Admin)
