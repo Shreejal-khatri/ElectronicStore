@@ -9,7 +9,7 @@ const User = require('../models/User');
 console.log('User type:', typeof User);
 
 console.log('Loading Product model...');
-const Product = require('../models/product');
+const Product = require('../models/Product');
 console.log('Product type:', typeof Product);
 
 //Only proceed if protect is a function
