@@ -20,9 +20,20 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//CORS configuration
+// Dynamic CORS configuration
+const allowedOrigins = (process.env.FRONTEND_URL || "").split(","); 
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', 
+  origin: function(origin, callback) {
+    //allow requests with no origin 
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS policy: Origin not allowed"), false);
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -39,7 +50,7 @@ app.use('/api/admin/orders', adminOrderRoutes);
 //Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-//404 handler
+// 404 handler
 app.use((req, res, next) => {
   res.status(404).json({
     success: false,
@@ -64,12 +75,12 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
+.then(() => {
+  console.log('✅ MongoDB connected successfully');
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
   });
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+});
