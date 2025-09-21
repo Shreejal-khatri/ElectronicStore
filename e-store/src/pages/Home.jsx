@@ -13,9 +13,6 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authAction, setAuthAction] = useState(null);
-  const [productId, setProductId] = useState(null);
 
   //Function to get proper image URL
   const getImageUrl = (imagePath) => {
@@ -62,45 +59,15 @@ export default function Home() {
   }, []);
 
   const handleShop = (productId) => {
-    if (!token) {
-      setProductId(productId);
-      setAuthAction('shop');
-      setShowAuthModal(true);
-      return;
-    }
     navigate(`/product/${productId}`);
   };
 
   const handleShopCollection = () => {
-    if (!token) {
-      setAuthAction('browse');
-      setShowAuthModal(true);
-      return;
-    }
     navigate("/products");
   };
 
   const handleFeatureCTA = () => {
-    if (!token) {
-      setAuthAction('browse');
-      setShowAuthModal(true);
-      return;
-    }
     navigate("/aboutus");
-  };
-
-  const handleLogin = () => {
-    setShowAuthModal(false);
-    navigate("/login");
-  };
-
-  const handleSignup = () => {
-    setShowAuthModal(false);
-    navigate("/signup");
-  };
-
-  const handleCloseModal = () => {
-    setShowAuthModal(false);
   };
 
   useEffect(() => {
@@ -831,109 +798,6 @@ export default function Home() {
       margin-bottom: 24px;
     }
 
-    /* Auth Modal Styles */
-    .auth-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(5px);
-    }
-
-    .auth-modal {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      max-width: 450px;
-      width: 90%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      position: relative;
-    }
-
-    .auth-modal-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #666;
-    }
-
-    .auth-modal-icon {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .auth-modal-icon svg {
-      width: 60px;
-      height: 60px;
-      color: #6366f1;
-    }
-
-    .auth-modal-title {
-      font-size: 24px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 16px;
-      color: #1f2937;
-    }
-
-    .auth-modal-description {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 32px;
-      line-height: 1.5;
-    }
-
-    .auth-modal-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .auth-modal-btn {
-      padding: 16px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-    }
-
-    .auth-modal-btn-primary {
-      background: #000;
-      color: white;
-    }
-
-    .auth-modal-btn-primary:hover {
-      background: #333;
-    }
-
-    .auth-modal-btn-secondary {
-      background: #f3f4f6;
-      color: #374151;
-    }
-
-    .auth-modal-btn-secondary:hover {
-      background: #e5e7eb;
-    }
-
-    .auth-modal-footer {
-      text-align: center;
-      margin-top: 24px;
-      color: #9ca3af;
-      font-size: 14px;
-    }
-
     /* Responsive Design */
     @media (max-width: 1200px) {
       .products-grid {
@@ -987,10 +851,6 @@ export default function Home() {
       .newsletter-submit {
         width: 100%;
       }
-
-      .auth-modal {
-        padding: 24px;
-      }
     }
 
     @media (max-width: 480px) {
@@ -1029,10 +889,6 @@ export default function Home() {
 
       .product-info {
         padding: 24px;
-      }
-
-      .auth-modal-title {
-        font-size: 20px;
       }
     }
   `;
@@ -1100,51 +956,11 @@ export default function Home() {
     </section>
   );
 
-  //Auth Modal Component
-  const AuthModal = () => (
-    <div className="auth-modal-overlay" onClick={handleCloseModal}>
-      <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="auth-modal-close" onClick={handleCloseModal}>×</button>
-        
-        <div className="auth-modal-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
-        
-        <h2 className="auth-modal-title">Authentication Required</h2>
-        
-        <p className="auth-modal-description">
-          {authAction === 'shop' 
-            ? "You need to be logged in to view product details." 
-            : "You need to be logged in to browse our collection."}
-        </p>
-        
-        <div className="auth-modal-buttons">
-          <button className="auth-modal-btn auth-modal-btn-primary" onClick={handleLogin}>
-            Log In
-          </button>
-          
-          <button className="auth-modal-btn auth-modal-btn-secondary" onClick={handleSignup}>
-            Create Account
-          </button>
-        </div>
-        
-        <p className="auth-modal-footer">
-          Join thousands of satisfied tech enthusiasts
-        </p>
-      </div>
-    </div>
-  );
-
   return (
     <>
       <Navbar />
       <style>{styles}</style>
       <div className="tech-home">
-        {/* Authentication Modal */}
-        {showAuthModal && <AuthModal />}
-
         {/* Floating Background Elements */}
         <div className="floating-elements">
           <div className="floating-element"></div>
@@ -1163,7 +979,7 @@ export default function Home() {
                 <button className="btn-hero-primary" onClick={handleShopCollection}>
                   Shop Collection
                 </button>
-                <button className="btn-hero-secondary">Learn More</button>
+                <button className="btn-hero-secondary" onClick={() => navigate('/aboutus')}>Learn More</button>
               </div>
             </div>
           </div>

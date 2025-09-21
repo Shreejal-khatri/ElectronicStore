@@ -14,6 +14,8 @@ export default function ProductDetails() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authAction, setAuthAction] = useState(null);
   
   useEffect(() => {
     const fetchProduct = async () => {
@@ -91,12 +93,17 @@ export default function ProductDetails() {
     }
   }, [product]);
 
-  const handleWishlistToggle = async () => {
+  // Check if user is authenticated
+  const isAuthenticated = () => {
     const token = localStorage.getItem('token');
-    
-    if (!token) {
-      alert('Please login to add items to wishlist');
-      navigate('/login');
+    return !!token;
+  };
+
+  const handleWishlistToggle = async () => {
+    // Check authentication first
+    if (!isAuthenticated()) {
+      setAuthAction('wishlist');
+      setShowAuthModal(true);
       return;
     }
 
@@ -106,9 +113,9 @@ export default function ProductDetails() {
     
     try {
       const API_BASE_URL = import.meta.env.VITE_API_URL;
+      const token = localStorage.getItem('token');
       
       if (isInWishlist) {
-     
         const res = await fetch(`${API_BASE_URL}/wishlist/${product._id}`, {
           method: 'DELETE',
           headers: {
@@ -118,8 +125,8 @@ export default function ProductDetails() {
 
         if (res.status === 401) {
           localStorage.removeItem('token');
-          alert('Session expired. Please login again.');
-          navigate('/login');
+          setAuthAction('wishlist');
+          setShowAuthModal(true);
           return;
         }
 
@@ -138,8 +145,8 @@ export default function ProductDetails() {
 
         if (res.status === 401) {
           localStorage.removeItem('token');
-          alert('Session expired. Please login again.');
-          navigate('/login');
+          setAuthAction('wishlist');
+          setShowAuthModal(true);
           return;
         }
 
@@ -159,6 +166,76 @@ export default function ProductDetails() {
       alert('Something went wrong. Please try again.');
     } finally {
       setWishlistLoading(false);
+    }
+  };
+
+  const addToCart = () => {
+    // Check authentication first
+    if (!isAuthenticated()) {
+      setAuthAction('cart');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!product) return;
+
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const existingIndex = cart.findIndex(item => item._id === product._id);
+
+    if (existingIndex >= 0) {
+      const newQuantity = cart[existingIndex].quantity + quantity;
+      if (newQuantity > 5) {
+        alert(`You can only add up to 5 items of ${product.name} to your cart.`);
+        return;
+      }
+      cart[existingIndex].quantity = newQuantity;
+    } else {
+      if (quantity > 5) {
+        alert(`You can only add up to 5 items of ${product.name} to your cart.`);
+        return;
+      }
+      cart.push({ 
+        ...product, 
+        quantity: quantity,
+        image: product.image || product.imageUrl
+      });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    setAddedToCart(true);
+    
+    // Dispatch cart update event
+    window.dispatchEvent(new Event('cartUpdated'));
+    
+    setTimeout(() => {
+      setAddedToCart(false);
+    }, 2000);
+  };
+
+  const handleLogin = () => {
+    setShowAuthModal(false);
+    navigate("/login");
+  };
+
+  const handleSignup = () => {
+    setShowAuthModal(false);
+    navigate("/signup");
+  };
+
+  const handleCloseModal = () => {
+    setShowAuthModal(false);
+    setAuthAction(null);
+  };
+
+  const incrementQuantity = () => {
+    if (quantity < 5) {
+      setQuantity(quantity + 1);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
     }
   };
 
@@ -193,17 +270,16 @@ export default function ProductDetails() {
     </div>
   );
 
-
   const getImageUrl = (imagePath) => {
-  if (!imagePath) return '/placeholder-image.jpg';
-  if (imagePath.startsWith('http')) return imagePath;
+    if (!imagePath) return '/placeholder-image.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
 
-  const BASE_URL = import.meta.env.VITE_API_BASE; 
+    const BASE_URL = import.meta.env.VITE_API_BASE; 
 
-  return imagePath.startsWith('/')
-    ? `${BASE_URL}${imagePath}`
-    : `${BASE_URL}/${imagePath}`;
-};
+    return imagePath.startsWith('/')
+      ? `${BASE_URL}${imagePath}`
+      : `${BASE_URL}/${imagePath}`;
+  };
 
   const productImages = [
     getImageUrl(product.imageUrl),
@@ -212,50 +288,44 @@ export default function ProductDetails() {
     getImageUrl(product.imageUrl)
   ];
 
-  const addToCart = () => {
-    if (!product) return;
-
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existingIndex = cart.findIndex(item => item._id === product._id);
-
-    if (existingIndex >= 0) {
-      const newQuantity = cart[existingIndex].quantity + quantity;
-      if (newQuantity > 5) {
-        alert(`You can only add up to 5 items of ${product.name} to your cart.`);
-        return;
-      }
-      cart[existingIndex].quantity = newQuantity;
-    } else {
-      if (quantity > 5) {
-        alert(`You can only add up to 5 items of ${product.name} to your cart.`);
-        return;
-      }
-      cart.push({ 
-        ...product, 
-        quantity: quantity,
-        image: product.image || product.imageUrl
-      });
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-    setAddedToCart(true);
-    
-    setTimeout(() => {
-      setAddedToCart(false);
-    }, 2000);
-  };
-
-  const incrementQuantity = () => {
-    if (quantity < 5) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
+  // Auth Modal Component
+  const AuthModal = () => (
+    <div className="auth-modal-overlay" onClick={handleCloseModal}>
+      <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="auth-modal-close" onClick={handleCloseModal}>×</button>
+        
+        <div className="auth-modal-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        
+        <h2 className="auth-modal-title">Authentication Required</h2>
+        
+        <p className="auth-modal-description">
+          {authAction === 'wishlist' 
+            ? "You need to be logged in to manage your wishlist." 
+            : authAction === 'cart'
+            ? "You need to be logged in to add items to your cart."
+            : "You need to be logged in to continue."}
+        </p>
+        
+        <div className="auth-modal-buttons">
+          <button className="auth-modal-btn auth-modal-btn-primary" onClick={handleLogin}>
+            Log In
+          </button>
+          
+          <button className="auth-modal-btn auth-modal-btn-secondary" onClick={handleSignup}>
+            Create Account
+          </button>
+        </div>
+        
+        <p className="auth-modal-footer">
+          Join thousands of satisfied tech enthusiasts
+        </p>
+      </div>
+    </div>
+  );
 
   const styles = `
     * {
@@ -839,6 +909,109 @@ export default function ProductDetails() {
       color: #22c55e;
     }
 
+    /* Auth Modal Styles */
+    .auth-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .auth-modal {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 450px;
+      width: 90%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .auth-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .auth-modal-icon {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .auth-modal-icon svg {
+      width: 60px;
+      height: 60px;
+      color: #6366f1;
+    }
+
+    .auth-modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    .auth-modal-description {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .auth-modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .auth-modal-btn {
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .auth-modal-btn-primary {
+      background: #000;
+      color: white;
+    }
+
+    .auth-modal-btn-primary:hover {
+      background: #333;
+    }
+
+    .auth-modal-btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .auth-modal-btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .auth-modal-footer {
+      text-align: center;
+      margin-top: 24px;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
     /* Responsive Design */
     @media (max-width: 1200px) {
       .product-details {
@@ -884,6 +1057,10 @@ export default function ProductDetails() {
         flex-direction: column;
         gap: 12px;
       }
+
+      .auth-modal {
+        padding: 24px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -898,6 +1075,10 @@ export default function ProductDetails() {
       .thumbnail-grid {
         grid-template-columns: repeat(3, 1fr);
       }
+
+      .auth-modal-title {
+        font-size: 20px;
+      }
     }
   `;
 
@@ -905,6 +1086,9 @@ export default function ProductDetails() {
     <>
       <Navbar />
       <style>{styles}</style>
+
+      {/* Authentication Modal */}
+      {showAuthModal && <AuthModal />}
 
       <div className="product-details-container">
         <nav className="breadcrumb">
