@@ -244,7 +244,7 @@ export default function Signup() {
             }}
           >
             <img
-              src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/img3.webp"
+              src="https://res.cloudinary.com/dzrfxgqb6/image/upload/v1758459498/coverlogin_js3wya.jpg"
               alt="Signup"
               style={styles.image}
             />
