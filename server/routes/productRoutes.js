@@ -25,7 +25,7 @@ router.post(
         description,
         category,
         stock: parseInt(stock),
-        imageUrl: req.file ? `/uploads/${req.file.filename}` : null
+        imageUrl: req.file ? req.file.path : null // ← CHANGED: Use Cloudinary URL
       });
 
       res.status(201).json(product);
@@ -51,7 +51,7 @@ router.put(
       if (updates.stock) updates.stock = Number(updates.stock);
 
       if (req.file) {
-        updates.imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        updates.imageUrl = req.file.path; // ← CHANGED: Use Cloudinary URL
       } else if (!updates.imageUrl) {
         const existingProduct = await Product.findById(req.params.id);
         if (existingProduct) {
