@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/authContext'; 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -11,6 +12,7 @@ export default function Wishlist() {
   const [buttonHover, setButtonHover] = useState({});
   const [imageErrors, setImageErrors] = useState({});
 
+  const { token, logout } = useAuth(); 
   const navigate = useNavigate();
 
   //Environment variables
@@ -21,19 +23,18 @@ export default function Wishlist() {
   const fetchWishlist = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
 
-      if (!token) {
+      if (!token) { 
         navigate('/login');
         return;
       }
 
       const res = await fetch(`${API_BASE_URL}/wishlist`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, 
       });
 
       if (res.status === 401) {
-        localStorage.removeItem('token');
+        logout(); 
         navigate('/login');
         return;
       }
@@ -53,21 +54,20 @@ export default function Wishlist() {
 
   useEffect(() => {
     fetchWishlist();
-  }, []);
+  }, [token]); 
 
   //Remove item from wishlist
   const handleRemove = async (id, e) => {
     e.stopPropagation();
 
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/wishlist/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, 
       });
 
       if (res.status === 401) {
-        localStorage.removeItem('token');
+        logout(); 
         navigate('/login');
         return;
       }

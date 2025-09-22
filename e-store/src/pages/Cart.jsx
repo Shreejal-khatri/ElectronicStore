@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/authContext"; // Add this import
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -290,6 +291,7 @@ export default function Cart() {
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState("");
   const [orderButtonHover, setOrderButtonHover] = useState(false);
+  const { token, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -355,8 +357,7 @@ export default function Cart() {
       setOrderError("Your cart is empty. Add items before placing an order.");
       return;
     }
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!token) { 
       setOrderError("Please log in to place an order.");
       navigate("/login");
       return;
@@ -392,8 +393,7 @@ export default function Cart() {
       if (!response.ok) {
         if (response.status === 401) {
           setOrderError("Your session has expired. Please log in again.");
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+          logout(); 
           navigate("/login");
           return;
         }

@@ -1,11 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/authContext"; 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth(); 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -67,8 +69,7 @@ export default function ProductDetails() {
   
   useEffect(() => {
     const checkWishlistStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (!token || !product) return;
+      if (!token || !product) return; 
 
       try {
         const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -91,16 +92,14 @@ export default function ProductDetails() {
     if (product) {
       checkWishlistStatus();
     }
-  }, [product]);
+  }, [product, token]); 
 
-  // Check if user is authenticated
   const isAuthenticated = () => {
-    const token = localStorage.getItem('token');
-    return !!token;
+    return !!token; 
   };
 
   const handleWishlistToggle = async () => {
-    // Check authentication first
+    //Check authentication first
     if (!isAuthenticated()) {
       setAuthAction('wishlist');
       setShowAuthModal(true);
@@ -113,18 +112,16 @@ export default function ProductDetails() {
     
     try {
       const API_BASE_URL = import.meta.env.VITE_API_URL;
-      const token = localStorage.getItem('token');
       
       if (isInWishlist) {
         const res = await fetch(`${API_BASE_URL}/wishlist/${product._id}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`, 
           },
         });
 
         if (res.status === 401) {
-          localStorage.removeItem('token');
           setAuthAction('wishlist');
           setShowAuthModal(true);
           return;
@@ -139,12 +136,11 @@ export default function ProductDetails() {
         const res = await fetch(`${API_BASE_URL}/wishlist/${product._id}`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`, 
           },
         });
 
         if (res.status === 401) {
-          localStorage.removeItem('token');
           setAuthAction('wishlist');
           setShowAuthModal(true);
           return;
@@ -170,7 +166,6 @@ export default function ProductDetails() {
   };
 
   const addToCart = () => {
-    // Check authentication first
     if (!isAuthenticated()) {
       setAuthAction('cart');
       setShowAuthModal(true);
@@ -204,7 +199,7 @@ export default function ProductDetails() {
     localStorage.setItem("cart", JSON.stringify(cart));
     setAddedToCart(true);
     
-    // Dispatch cart update event
+  
     window.dispatchEvent(new Event('cartUpdated'));
     
     setTimeout(() => {
@@ -288,7 +283,7 @@ export default function ProductDetails() {
     getImageUrl(product.imageUrl)
   ];
 
-  // Auth Modal Component
+  //Auth Modal Component
   const AuthModal = () => (
     <div className="auth-modal-overlay" onClick={handleCloseModal}>
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
